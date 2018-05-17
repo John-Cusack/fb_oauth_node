@@ -44,9 +44,15 @@ passport.use(
       clientSecret: keys.FACEBOOK_APP_SECRET,
       callbackURL: '/auth/facebook/callback'
     },
-    function(accessToken, refreshToken, profile, cb) {
-      User.findOrCreate({facebookId: profile.id}, function(err, user) {
-        return cb(err, user);
+    (accessToken, refreshToken, profile, done) => {
+      User.findOne({facebookId: profile.id}).then(existingUser => {
+        if (existingUser) {
+          done(null, existingUser);
+        } else {
+          new User({facebookId: profile.id})
+            .save()
+            .then(user => done(null, user));
+        }
       });
     }
   )
