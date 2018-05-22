@@ -24,11 +24,14 @@ passport.use(
       callbackURL: '/auth/google/callback'
     },
     (accessToken, refreshToken, profile, done) => {
-      User.findOne({googleId: profile.id}).then(existingUser => {
+      User.findOne({ googleId: profile.id }).then(existingUser => {
         if (existingUser) {
           done(null, existingUser);
         } else {
-          new User({googleId: profile.id})
+          new User({
+            googleId: profile.id,
+            googleEmail: profile.emails[0].value
+          })
             .save()
             .then(user => done(null, user));
         }
@@ -37,19 +40,36 @@ passport.use(
   )
 );
 
+// passport.use(
+//   new FacebookStrategy(
+//     {
+//       clientID: keys.FACEBOOK_APP_ID,
+//       clientSecret: keys.FACEBOOK_APP_SECRET,
+//       callbackURL: '/auth/facebook/callback'
+//     },
+//     (accessToken, refreshToken, profile, done) => {
+//       console.log(profile);
+//     }
+//   )
+// );
+
 passport.use(
   new FacebookStrategy(
     {
       clientID: keys.FACEBOOK_APP_ID,
       clientSecret: keys.FACEBOOK_APP_SECRET,
-      callbackURL: '/auth/facebook/callback'
+      callbackURL: '/auth/facebook/callback',
+      profileFields: ['id', 'email', 'name']
     },
     (accessToken, refreshToken, profile, done) => {
-      User.findOne({facebookId: profile.id}).then(existingUser => {
+      User.findOne({ facebookId: profile.id }).then(existingUser => {
         if (existingUser) {
           done(null, existingUser);
         } else {
-          new User({facebookId: profile.id})
+          new User({
+            facebookId: profile.id,
+            facebookEmail: profile.emails[0].value
+          })
             .save()
             .then(user => done(null, user));
         }
