@@ -24,24 +24,37 @@ passport.use(
       callbackURL: '/auth/google/callback'
     },
     (accessToken, refreshToken, profile, done) => {
-      User.findOne({ facebookEmail: profile.emails[0].value }).then(
-        existingUser => {
-          if (existingUser) {
-            User.findOneAndUpdate(
-              { facebookEmail: profile.emails[0].value },
-              { googleId: profile.id },
-              { new: true }
-            ).then(done(null, existingUser));
-          } else {
-            new User({
-              googleId: profile.id,
-              googleEmail: profile.emails[0].value
-            })
-              .save()
-              .then(user => done(null, user));
-          }
+      User.findOne({
+        $or: [
+          { facebookEmail: profile.emails[0].value },
+          { googleEmail: profile.emails[0].value }
+        ]
+      }).then(existingUser => {
+        if (existingUser) {
+          User.findOneAndUpdate(
+            {
+              $and: [
+                { googleId: { $exists: false } },
+                { facebookEmail: profile.emails[0].value }
+              ]
+            },
+            { $set: { googleId: profile.id } },
+            { new: true }
+          )
+          .then(fbUser => {
+            if (fbUser) {
+              done(null, fbUser);
+            }
+          });
+        } else {
+          new User({
+            googleId: profile.id,
+            googleEmail: profile.emails[0].value
+          })
+            .save()
+            .then(user => done(null, user));
         }
-      );
+      });
     }
   )
 );
@@ -55,51 +68,37 @@ passport.use(
       profileFields: ['id', 'email', 'name']
     },
     (accessToken, refreshToken, profile, done) => {
-      User.findOne({ googleEmail: profile.emails[0].value }).then(
-        existingUser => {
-          if (existingUser) {
-            User.findOneAndUpdate(
-              { googleEmail: profile.emails[0].value },
-              { facebookId: profile.id },
-              { new: true }
-            ).then(done(null, existingUser));
-          } else {
-            new User({
-              facebookId: profile.id,
-              facebookEmail: profile.emails[0].value
-            })
-              .save()
-              .then(user => done(null, user));
-          }
+      User.findOne({
+        $or: [
+          { facebookEmail: profile.emails[0].value },
+          { googleEmail: profile.emails[0].value }
+        ]
+      }).then(existingUser => {
+        if (existingUser) {
+          User.findOneAndUpdate(
+            {
+              $and: [
+                { facebookId: { $exists: false } },
+                { googleEmail: profile.emails[0].value }
+              ]
+            },
+            { $set: { facebookId: profile.id } },
+            { new: true }
+          )
+          .then(googleUser => {
+            if (googleUser) {
+              done(null, googleUser);
+            }
+          });
+        } else {
+          new User({
+            facebookId: profile.id,
+            facebookEmail: profile.emails[0].value
+          })
+            .save()
+            .then(user => done(null, user));
         }
-      );
+      });
     }
   )
 );
-
-// passport.use(
-//   new FacebookStrategy(
-//     {
-//       clientID: keys.FACEBOOK_APP_ID,
-//       clientSecret: keys.FACEBOOK_APP_SECRET,
-//       callbackURL: '/auth/facebook/callback',
-//       profileFields: ['id', 'email', 'name']
-//     },
-//     (accessToken, refreshToken, profile, done) => {
-//       User.findOne({ googleEmail: profile.emails[0].value }).then(
-//         existingUser => {
-//           if (existingUser) {
-//             done(null, existingUser);
-//           } else {
-//             new User({
-//               facebookId: profile.id,
-//               facebookEmail: profile.emails[0].value
-//             })
-//               .save()
-//               .then(user => done(null, user));
-//           }
-//         }
-//       );
-//     }
-//   )
-// );
