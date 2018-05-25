@@ -31,19 +31,25 @@ passport.use(
         ]
       }).then(existingUser => {
         if (existingUser) {
-          User.findOneAndUpdate(
-            {
-              $and: [
-                { googleId: { $exists: false } },
-                { facebookEmail: profile.emails[0].value }
-              ]
-            },
-            { $set: { googleId: profile.id } },
-            { new: true }
-          )
-          .then(fbUser => {
-            if (fbUser) {
-              done(null, fbUser);
+          User.findOne({
+            $and: [
+              { googleId: { $exists: false } },
+              { facebookEmail: profile.emails[0].value }
+            ]
+          }).then(facebookUser => {
+            if (facebookUser) {
+              User.findOneAndUpdate(
+                {
+                  $and: [
+                    { googleId: { $exists: false } },
+                    { facebookEmail: profile.emails[0].value }
+                  ]
+                },
+                { $set: { googleId: profile.id } },
+                { new: true }
+              );
+            } else {
+              done(null, facebookUser);
             }
           });
         } else {
@@ -75,18 +81,24 @@ passport.use(
         ]
       }).then(existingUser => {
         if (existingUser) {
-          User.findOneAndUpdate(
-            {
-              $and: [
-                { facebookId: { $exists: false } },
-                { googleEmail: profile.emails[0].value }
-              ]
-            },
-            { $set: { facebookId: profile.id } },
-            { new: true }
-          )
-          .then(googleUser => {
+          User.findOne({
+            $and: [
+              { facebookId: { $exists: false } },
+              { googleEmail: profile.emails[0].value }
+            ]
+          }).then(googleUser => {
             if (googleUser) {
+              User.findOneAndUpdate(
+                {
+                  $and: [
+                    { facebookId: { $exists: false } },
+                    { googleEmail: profile.emails[0].value }
+                  ]
+                },
+                { $set: { facebookId: profile.id } },
+                { new: true }
+              );
+            } else {
               done(null, googleUser);
             }
           });
