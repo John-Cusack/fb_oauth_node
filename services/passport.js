@@ -21,46 +21,21 @@ passport.use(
     {
       clientID: keys.googleClientID,
       clientSecret: keys.googleClientSecret,
-      callbackURL: '/auth/google/callback'
+      callbackURL: '/auth/google/callback',
+      proxy: true
     },
-    (accessToken, refreshToken, profile, done) => {
-      User.findOne({
-        $or: [
-          { facebookEmail: profile.emails[0].value },
-          { googleEmail: profile.emails[0].value }
-        ]
-      }).then(existingUser => {
-        if (existingUser) {
-          User.findOne({
-            $and: [
-              { googleId: { $exists: false } },
-              { facebookEmail: profile.emails[0].value }
-            ]
-          }).then(facebookUser => {
-            if (facebookUser) {
-              User.findOneAndUpdate(
-                {
-                  $and: [
-                    { googleId: { $exists: false } },
-                    { facebookEmail: profile.emails[0].value }
-                  ]
-                },
-                { $set: { googleId: profile.id } },
-                { new: true }
-              );
-            } else {
-              done(null, facebookUser);
-            }
-          });
-        } else {
-          new User({
-            googleId: profile.id,
-            googleEmail: profile.emails[0].value
-          })
-            .save()
-            .then(user => done(null, user));
-        }
-      });
+    async (accessToken, refreshToken, profile, done) => {
+      const existingUser = await User.findOne({ googleId: profile.id });
+
+      if (existingUser) {
+        return done(null, existingUser);
+      }
+
+      const user = await new User({
+        googleId: profile.id,
+        googleEmail: profile.emails[0].value
+      }).save();
+      done(null, user);
     }
   )
 );
@@ -73,44 +48,18 @@ passport.use(
       callbackURL: '/auth/facebook/callback',
       profileFields: ['id', 'email', 'name']
     },
-    (accessToken, refreshToken, profile, done) => {
-      User.findOne({
-        $or: [
-          { facebookEmail: profile.emails[0].value },
-          { googleEmail: profile.emails[0].value }
-        ]
-      }).then(existingUser => {
-        if (existingUser) {
-          User.findOne({
-            $and: [
-              { facebookId: { $exists: false } },
-              { googleEmail: profile.emails[0].value }
-            ]
-          }).then(googleUser => {
-            if (googleUser) {
-              User.findOneAndUpdate(
-                {
-                  $and: [
-                    { facebookId: { $exists: false } },
-                    { googleEmail: profile.emails[0].value }
-                  ]
-                },
-                { $set: { facebookId: profile.id } },
-                { new: true }
-              );
-            } else {
-              done(null, googleUser);
-            }
-          });
-        } else {
-          new User({
-            facebookId: profile.id,
-            facebookEmail: profile.emails[0].value
-          })
-            .save()
-            .then(user => done(null, user));
-        }
-      });
+    async (accessToken, refreshToken, profile, done) => {
+      const existingUser = await User.findOne({ facebookId: profile.id });
+
+      if (existingUser) {
+        return done(null, existingUser);
+      }
+
+      const user = await new User({
+        facebookId: profile.id,
+        facebookEmail: profile.emails[0].value
+      }).save();
+      done(null, user);
     }
   )
 );
