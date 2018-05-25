@@ -31,7 +31,17 @@ passport.use(
         ]
       }).then(existingUser => {
         if (existingUser) {
-          User.findOneAndUpdate(
+          User.findOne(
+            {
+              $and: [
+                { googleId: { $exists: false } },
+                { facebookEmail: profile.emails[0].value }
+              ]
+            }
+          )
+          .then(facebookUser => {
+            if (facebookUser) {
+              User.findOneAndUpdate(
             {
               $and: [
                 { googleId: { $exists: false } },
@@ -41,10 +51,8 @@ passport.use(
             { $set: { googleId: profile.id } },
             { new: true }
           )
-          .then(fbUser => {
-            if (fbUser) {
-              done(null, fbUser);
-            }
+            } else {
+              done(null, facebookUser);}
           });
         } else {
           new User({
@@ -58,6 +66,7 @@ passport.use(
     }
   )
 );
+
 
 passport.use(
   new FacebookStrategy(
@@ -75,7 +84,17 @@ passport.use(
         ]
       }).then(existingUser => {
         if (existingUser) {
-          User.findOneAndUpdate(
+          User.findOne(
+            {
+              $and: [
+                { facebookId: { $exists: false } },
+                { googleEmail: profile.emails[0].value }
+              ]
+            }
+          )
+          .then(googleUser => {
+            if (googleUser) {
+              User.findOneAndUpdate(
             {
               $and: [
                 { facebookId: { $exists: false } },
@@ -85,10 +104,8 @@ passport.use(
             { $set: { facebookId: profile.id } },
             { new: true }
           )
-          .then(googleUser => {
-            if (googleUser) {
-              done(null, googleUser);
-            }
+            } else {
+              done(null, googleUser);}
           });
         } else {
           new User({
