@@ -1,9 +1,8 @@
 node_modules
-keys.js
 client-key.pem
 client.csr
-config
 build
 key.pem
 cert.pem
 package-lock.json
+dev.js
